@@ -10,7 +10,8 @@ pipeline {
         stage('Clone Git repository') {
             steps {
                 sshagent(['sourfor-ssh-git']) {
-                    git branch: 'main', url: 'git@github.com:SourFor/jenkins-pipelines.git'
+                    // git branch: 'main', url: 'git@github.com:SourFor/jenkins-pipelines.git'
+                    sh 'GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" git clone git@github.com:SourFor/jenkins-pipelines.git' // fix name
                 }
             }
         }
@@ -22,23 +23,18 @@ pipeline {
                 }
             }
             steps {
-                sh 'printenv'
-                sh 'ls -la'
-                sh 'sleep 5'
-                sh "ls -la ${workspace}"
-                // new hudson.FilePath(new File("${file_to_push}")).copyFrom(file_to_push)
-                // file_to_push.delete()
-                sh "ls -la ${workspace}"
-                // sh "cp ${workspace}/${large} ./"
-                unstash 'FILE'
-                sh 'mv FILE $FILE_FILENAME'
-                withCredentials([sshWithPrivateKey(credentialsId: 'sourfor-ssh-git',
-                  gitToolName: 'git-tool')]) {
-                    sh 'git config user.name SourFor'
-                    sh 'git config user.email sour-89@mail.ru'
+                //TODO: убрать персональную информацию из названия переменных и кода (максимально нейтральные, обезличенные )
+                sshagent(['sourfor-ssh-git']) { // fix name
+                    dir('jenkins-pipelines'){
+                    unstash 'FILE'
+                    sh 'mv FILE $FILE_FILENAME'
+                    sh 'git config user.name SourFor' // fix name
+                    sh 'git config user.email sour-89@mail.ru' // fix name
                     sh 'git add .'
                     sh "git commit -m 'Added $FILE_FILENAME'"
-                    sh 'git push origin main'
+                    sh 'GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" git push origin main'    
+                    }
+                    
                   }
             }
         }
